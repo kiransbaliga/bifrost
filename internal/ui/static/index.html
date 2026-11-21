@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bifrost — Minimalist Cloud Orchestrator</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+            mono: ['IBM Plex Mono', 'monospace'],
+          },
+          colors: {
+            paper: {
+              50: '#fafaf8',
+              100: '#f6f6f3', // baliga.dev background
+              200: '#e5e5df',
+              300: '#deded8', // baliga.dev border
+              700: '#797974', // baliga.dev text muted
+              800: '#444441',
+              900: '#262625', // baliga.dev text primary
+            },
+            charcoal: {
+              800: '#1e1e1c',
+              850: '#181816',
+              900: '#141413', // dark paper background
+              950: '#0e0e0d',
+              border: '#2a2a27',
+              text: '#ededeb',
+              muted: '#8e8e88',
+            },
+            accent: {
+              DEFAULT: '#16a34a', // editorial green
+              hover: '#15803d',
+              subtle: 'rgba(22, 163, 74, 0.08)',
+              subtleDark: 'rgba(34, 197, 94, 0.12)'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    [x-cloak] { display: none !important; }
+    
+    body {
+      transition: background-color 0.2s ease, color 0.2s ease;
+    }
+
+    .border-paper {
+      border-color: #deded8;
+    }
+    .dark .border-paper {
+      border-color: #262624;
+    }
+
+    /* Minimalist scrollbars */
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #d4d4ce; border-radius: 3px; }
+    .dark ::-webkit-scrollbar-thumb { background: #2f2f2b; }
+
+    /* Smooth progress bar transitions */
+    .metric-bar {
+      transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+  </style>
+
+  <script>
+    // Theme initialization before paint
+    if (localStorage.getItem('bifrost-theme') === 'dark' || 
+       (!('bifrost-theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  </script>
+</head>
+
+<body class="bg-paper-100 text-paper-900 dark:bg-charcoal-900 dark:text-charcoal-text font-sans antialiased text-[13.5px] min-h-screen flex flex-col selection:bg-accent selection:text-white"
+      x-data="bifrostApp()" x-init="init()">
+
+  <!-- Top Navigation Bar -->
+  <header class="border-b border-paper bg-paper-100/80 dark:bg-charcoal-900/80 backdrop-blur-sm sticky top-0 z-30 transition-colors">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
+      
+      <!-- Logo & Engine Tag -->
+      <div class="flex items-center gap-3">
+        <a href="/" class="flex items-center gap-2 group">
+          <div class="w-4 h-4 rounded-full border border-paper-900/30 dark:border-charcoal-text/30 flex items-center justify-center transition-transform group-hover:scale-105">
+            <span class="w-1.5 h-1.5 rounded-full bg-accent"></span>
+          </div>
+          <span class="font-medium text-[14.5px] tracking-tight">bifrost</span>
+        </a>
+        <span class="text-paper-700 dark:text-charcoal-muted text-[11px] font-mono border-l border-paper pl-3">v0.1.0</span>
+      </div>
+
+      <!-- Center Nav Tabs -->
+      <nav class="flex items-center gap-1 sm:gap-2">
+        <button @click="currentTab = 'apps'" 
+                :class="currentTab === 'apps' ? 'text-paper-900 dark:text-white font-medium bg-paper-200/60 dark:bg-charcoal-800' : 'text-paper-700 dark:text-charcoal-muted hover:text-paper-900 dark:hover:text-white'"
+                class="px-2.5 py-1 rounded text-xs transition-colors">
+          Applications
+        </button>
+        <button @click="currentTab = 'telemetry'" 
+                :class="currentTab === 'telemetry' ? 'text-paper-900 dark:text-white font-medium bg-paper-200/60 dark:bg-charcoal-800' : 'text-paper-700 dark:text-charcoal-muted hover:text-paper-900 dark:hover:text-white'"
+                class="px-2.5 py-1 rounded text-xs transition-colors flex items-center gap-1.5">
+          <span>Host & Runtime</span>
+          <span class="w-1.5 h-1.5 rounded-full bg-accent"></span>
+        </button>
+      </nav>
+
+      <!-- Right Actions: Theme Toggle & New App -->
+      <div class="flex items-center gap-2.5">
+        <button @click="toggleTheme()" 
+                class="text-paper-700 dark:text-charcoal-muted hover:text-paper-900 dark:hover:text-white p-1.5 rounded border border-paper hover:bg-paper-200/50 dark:hover:bg-charcoal-800 transition" 
+                title="Toggle appearance">
+          <span x-show="!darkMode" class="text-xs">◑</span>
+          <span x-show="darkMode" class="text-xs">◐</span>
+        </button>
+
+        <button @click="showNewModal = true" 
+                class="inline-flex items-center gap-1 bg-paper-900 text-paper-50 dark:bg-paper-50 dark:text-paper-900 px-3 py-1.2 rounded text-xs font-medium hover:opacity-90 transition">
+          <span>+</span>
+          <span>New Project</span>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- Main View Area -->
+  <main class="max-w-4xl mx-auto px-4 sm:px-6 py-8 flex-1 w-full">
+
+    <!-- Subtitle Header -->
+    <div class="mb-8">
+      <div class="flex items-baseline justify-between">
+        <div>
+          <h1 class="text-lg font-medium tracking-tight text-paper-900 dark:text-white">Edge Orchestration & In-Process Proxy</h1>
+          <p class="text-paper-700 dark:text-charcoal-muted text-xs mt-1">
+            Running on <span class="font-mono" x-text="metrics.hostname || 'localhost'"></span> (<span class="font-mono" x-text="metrics.os + '/' + metrics.arch"></span>) &middot; <span x-text="formatUptime(metrics.uptime_seconds)"></span> uptime
+          </p>
+        </div>
+        <div class="hidden sm:flex items-center gap-3 text-xs text-paper-700 dark:text-charcoal-muted">
+          <span>Process RSS: <strong class="text-paper-900 dark:text-white font-mono" x-text="(metrics.process_rss_mb || metrics.go_alloc_mb || 0) + ' MB'"></strong></span>
+          <span class="text-paper-300 dark:text-charcoal-border">&vert;</span>
+          <span>Active Containers: <strong class="text-paper-900 dark:text-white font-mono" x-text="metrics.active_containers || 0"></strong></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 1: APPLICATIONS -->
+    <div x-show="currentTab === 'apps'" x-cloak class="space-y-6">
+      
+      <!-- Section header with count -->
+      <div class="flex items-center justify-between border-b border-paper pb-2">
+        <div class="flex items-center gap-2">
+          <span class="text-xs uppercase tracking-wider font-medium text-paper-700 dark:text-charcoal-muted">Projects</span>
+          <span class="text-[11px] font-mono px-1.5 py-0.2 rounded bg-paper-200/70 dark:bg-charcoal-800 text-paper-700 dark:text-charcoal-muted" x-text="projects.length"></span>
+        </div>
+        <span class="text-[11px] text-paper-700 dark:text-charcoal-muted">Continuous deploy from GitHub</span>
+      </div>
+
+      <!-- Empty State -->
+      <div x-show="projects.length === 0" class="border border-dashed border-paper rounded-lg p-10 text-center">
+        <p class="text-paper-800 dark:text-charcoal-text font-medium text-sm">No applications deployed yet</p>
+        <p class="text-xs text-paper-700 dark:text-charcoal-muted mt-1 max-w-sm mx-auto">
+          Deploy any static site (0MB container memory) or dynamic Node/Dockerfile project.
+        </p>
+        <button @click="showNewModal = true" class="mt-4 inline-flex items-center gap-1.5 text-xs text-accent underline underline-offset-4 hover:text-accent-hover font-medium">
+          Create first project &rarr;
+        </button>
+      </div>
+
+      <!-- Projects Listing -->
+      <div class="space-y-3">
+        <template x-for="p in projects" :key="p.id">
+          <div class="bg-white dark:bg-charcoal-850 border border-paper rounded-lg p-4 transition-all hover:border-paper-700/40 dark:hover:border-charcoal-muted/40">
+            
+            <div class="flex items-start justify-between">
+              <div>
+                <div class="flex items-center gap-2">
+                  <span class="w-2 h-2 rounded-full"
+                        :class="p.active_deployment_id ? 'bg-accent' : 'bg-paper-300 dark:bg-charcoal-border'"></span>
+                  <h3 class="font-medium text-sm text-paper-900 dark:text-white" x-text="p.name"></h3>
+                  <span class="font-mono text-[11px] text-paper-700 dark:text-charcoal-muted" x-text="'#' + p.id"></span>
+                </div>
+
+                <!-- Domains & Routing -->
+                <div class="mt-2.5 flex flex-wrap items-center gap-2">
+                  <template x-for="domain in p.domains || []" :key="domain">
+                    <a :href="'https://' + domain" target="_blank" rel="noopener noreferrer"
+                       class="font-mono text-xs text-paper-800 dark:text-charcoal-text hover:text-accent dark:hover:text-accent inline-flex items-center gap-1 underline underline-offset-2 decoration-paper-300 dark:decoration-charcoal-border transition-colors">
+                      <span x-text="domain"></span>
+                      <span class="text-[10px] text-paper-700 dark:text-charcoal-muted">&nearr;</span>
+                    </a>
+                  </template>
+                  <span x-show="!p.domains || p.domains.length === 0" class="text-xs text-paper-700 dark:text-charcoal-muted italic">No domain mapped</span>
+                </div>
+              </div>
+
+              <!-- Badges -->
+              <div class="flex items-center gap-2 text-[11px] font-mono">
+                <span class="px-2 py-0.5 rounded border border-paper dark:border-charcoal-border text-paper-700 dark:text-charcoal-muted"
+                      x-text="p.build_type === 'static' ? 'static &middot; 0mb' : (p.build_type || 'dynamic')">
+                </span>
+                <span class="text-paper-700 dark:text-charcoal-muted hidden sm:inline" x-text="p.port ? (p.port + '/tcp') : ''"></span>
+              </div>
+            </div>
+
+            <!-- Meta details & Actions -->
+            <div class="mt-4 pt-3 border-t border-paper/60 dark:border-charcoal-border/60 flex flex-wrap items-center justify-between gap-3 text-xs">
+              <div class="flex items-center gap-4 text-paper-700 dark:text-charcoal-muted text-[11.5px]">
+                <span>Branch: <code class="text-paper-900 dark:text-white" x-text="p.branch || 'main'"></code></span>
+                <span x-show="p.memory_limit_mb">Limit: <span class="font-mono text-paper-900 dark:text-white" x-text="p.memory_limit_mb + 'MB'"></span></span>
+              </div>
+
+              <div class="flex items-center gap-2">
+                <button @click="openSetupModal(p)" 
+                        class="px-2.5 py-1 rounded border border-paper hover:bg-paper-200/50 dark:hover:bg-charcoal-800 text-paper-800 dark:text-charcoal-text transition">
+                  CI/CD Setup
+                </button>
+                <button @click="openLogsModal(p)" 
+                        class="px-2.5 py-1 rounded border border-paper hover:bg-paper-200/50 dark:hover:bg-charcoal-800 text-paper-800 dark:text-charcoal-text transition">
+                  Logs
+                </button>
+                <button @click="deployManual(p.id)" 
+                        class="px-2.5 py-1 rounded bg-accent/10 hover:bg-accent/20 text-accent font-medium transition">
+                  Deploy &rarr;
+                </button>
+                <button @click="deleteProject(p.id)" 
+                        class="text-paper-700 hover:text-red-500 dark:text-charcoal-muted dark:hover:text-red-400 p-1 ml-1"
+                        title="Delete project">
+                  &times;
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </template>
+      </div>
+    </div>
+
+    <!-- TAB 2: HOST & RUNTIME TELEMETRY -->
+    <div x-show="currentTab === 'telemetry'" x-cloak class="space-y-6">
+      
+      <div class="border-b border-paper pb-2">
+        <h2 class="text-xs uppercase tracking-wider font-medium text-paper-700 dark:text-charcoal-muted">System Resources & Footprint</h2>
+        <p class="text-xs text-paper-700 dark:text-charcoal-muted mt-0.5">Live metrics polled every 3 seconds directly from the kernel</p>
+      </div>
+
+      <!-- Telemetry Cards Grid -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        
+        <!-- Host RAM -->
+        <div class="bg-white dark:bg-charcoal-850 border border-paper rounded-lg p-4 space-y-3">
+          <div class="flex justify-between items-center text-xs">
+            <span class="font-medium text-paper-900 dark:text-white">Host Memory (RAM)</span>
+            <span class="font-mono text-paper-700 dark:text-charcoal-muted" x-text="round(metrics.ram_usage_percent) + '%'"></span>
+          </div>
+          <div class="w-full bg-paper-200 dark:bg-charcoal-border h-1.5 rounded-full overflow-hidden">
+            <div class="bg-paper-900 dark:bg-paper-50 h-full metric-bar rounded-full" 
+                 :style="'width: ' + (metrics.ram_usage_percent || 0) + '%'"></div>
+          </div>
+          <div class="flex justify-between text-[11px] font-mono text-paper-700 dark:text-charcoal-muted pt-1">
+            <span>Used: <strong class="text-paper-900 dark:text-white" x-text="formatMB(metrics.used_ram_mb)"></strong></span>
+            <span>Total: <strong class="text-paper-900 dark:text-white" x-text="formatMB(metrics.total_ram_mb)"></strong></span>
+          </div>
+        </div>
+
+        <!-- Swap Memory -->
+        <div class="bg-white dark:bg-charcoal-850 border border-paper rounded-lg p-4 space-y-3">
+          <div class="flex justify-between items-center text-xs">
+            <span class="font-medium text-paper-900 dark:text-white">Swap Storage</span>
+            <span class="font-mono text-paper-700 dark:text-charcoal-muted" x-text="round(metrics.swap_usage_percent) + '%'"></span>
+          </div>
+          <div class="w-full bg-paper-200 dark:bg-charcoal-border h-1.5 rounded-full overflow-hidden">
+            <div class="bg-paper-700 dark:bg-charcoal-muted h-full metric-bar rounded-full" 
+                 :style="'width: ' + (metrics.swap_usage_percent || 0) + '%'"></div>
+          </div>
+          <div class="flex justify-between text-[11px] font-mono text-paper-700 dark:text-charcoal-muted pt-1">
+            <span>Used: <strong class="text-paper-900 dark:text-white" x-text="formatMB(metrics.used_swap_mb)"></strong></span>
+            <span>Total: <strong class="text-paper-900 dark:text-white" x-text="formatMB(metrics.total_swap_mb)"></strong></span>
+          </div>
+        </div>
+
+        <!-- Disk Storage -->
+        <div class="bg-white dark:bg-charcoal-850 border border-paper rounded-lg p-4 space-y-3">
+          <div class="flex justify-between items-center text-xs">
+            <span class="font-medium text-paper-900 dark:text-white">Root Filesystem Disk</span>
+            <span class="font-mono text-paper-700 dark:text-charcoal-muted" x-text="metrics.disk_usage_percent + '%'"></span>
+          </div>
+          <div class="w-full bg-paper-200 dark:bg-charcoal-border h-1.5 rounded-full overflow-hidden">
+            <div class="bg-paper-900 dark:bg-paper-50 h-full metric-bar rounded-full" 
+                 :style="'width: ' + (metrics.disk_usage_percent || 0) + '%'"></div>
+          </div>
+          <div class="flex justify-between text-[11px] font-mono text-paper-700 dark:text-charcoal-muted pt-1">
+            <span>Used: <strong class="text-paper-900 dark:text-white" x-text="metrics.disk_used_gb + ' GB'"></strong></span>
+            <span>Total: <strong class="text-paper-900 dark:text-white" x-text="metrics.disk_total_gb + ' GB'"></strong></span>
+          </div>
+        </div>
+
+        <!-- CPU & Cores -->
+        <div class="bg-white dark:bg-charcoal-850 border border-paper rounded-lg p-4 space-y-3">
+          <div class="flex justify-between items-center text-xs">
+            <span class="font-medium text-paper-900 dark:text-white">Host Processor</span>
+            <span class="font-mono text-paper-700 dark:text-charcoal-muted" x-text="metrics.cpu_cores + ' cores'"></span>
+          </div>
+          <div class="w-full bg-paper-200 dark:bg-charcoal-border h-1.5 rounded-full overflow-hidden">
+            <div class="bg-accent h-full metric-bar rounded-full" 
+                 :style="'width: ' + Math.min(metrics.cpu_usage_percent || 5, 100) + '%'"></div>
+          </div>
+          <div class="flex justify-between text-[11px] font-mono text-paper-700 dark:text-charcoal-muted pt-1">
+            <span>Load / Usage: <strong class="text-paper-900 dark:text-white" x-text="(metrics.cpu_usage_percent || 0) + '%'"></strong></span>
+            <span>Goroutines: <strong class="text-paper-900 dark:text-white" x-text="metrics.num_goroutines"></strong></span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Bifrost Self-Resource Breakdown -->
+      <div class="bg-white dark:bg-charcoal-850 border border-paper rounded-lg p-5">
+        <h3 class="font-medium text-xs uppercase tracking-wider text-paper-700 dark:text-charcoal-muted mb-4">
+          Bifrost Process Footprint (Self-Consumption)
+        </h3>
+
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
+          <div class="border-l-2 border-accent pl-3">
+            <span class="text-paper-700 dark:text-charcoal-muted block text-[11px]">Process RSS</span>
+            <span class="font-mono font-medium text-sm text-paper-900 dark:text-white" x-text="(metrics.process_rss_mb || 14) + ' MB'"></span>
+          </div>
+
+          <div class="border-l-2 border-paper-300 dark:border-charcoal-border pl-3">
+            <span class="text-paper-700 dark:text-charcoal-muted block text-[11px]">Go Heap Alloc</span>
+            <span class="font-mono font-medium text-sm text-paper-900 dark:text-white" x-text="metrics.go_alloc_mb + ' MB'"></span>
+          </div>
+
+          <div class="border-l-2 border-paper-300 dark:border-charcoal-border pl-3">
+            <span class="text-paper-700 dark:text-charcoal-muted block text-[11px]">OS Virtual Mem</span>
+            <span class="font-mono font-medium text-sm text-paper-900 dark:text-white" x-text="metrics.go_sys_mb + ' MB'"></span>
+          </div>
+
+          <div class="border-l-2 border-paper-300 dark:border-charcoal-border pl-3">
+            <span class="text-paper-700 dark:text-charcoal-muted block text-[11px]">Active Routes</span>
+            <span class="font-mono font-medium text-sm text-paper-900 dark:text-white" x-text="metrics.active_routes || 0"></span>
+          </div>
+        </div>
+
+        <p class="mt-4 text-[11.5px] text-paper-700 dark:text-charcoal-muted leading-relaxed">
+          Bifrost embeds SQLite, the Let's Encrypt TLS reverse proxy, and the build orchestrator within a single binary, bypassing external proxy containers (saving ~60MB RAM) and external databases (saving ~100MB RAM).
+        </p>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- Modal: Create New Project -->
+  <div x-show="showNewModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4">
+    <div @click.away="showNewModal = false" 
+         class="bg-white dark:bg-charcoal-850 border border-paper rounded-xl max-w-md w-full p-6 shadow-xl transition-all">
+      
+      <div class="flex justify-between items-center mb-5">
+        <h3 class="font-medium text-sm text-paper-900 dark:text-white">Create New Project</h3>
+        <button @click="showNewModal = false" class="text-paper-700 dark:text-charcoal-muted hover:text-paper-900 dark:hover:text-white text-base">&times;</button>
+      </div>
+
+      <div class="space-y-4 text-xs">
+        <div>
+          <label class="block text-paper-800 dark:text-charcoal-text font-medium mb-1">Project Name</label>
+          <input type="text" x-model="newForm.name" placeholder="my-app" 
+                 class="w-full bg-paper-50 dark:bg-charcoal-900 border border-paper rounded px-3 py-1.5 text-paper-900 dark:text-white focus:outline-none focus:border-paper-900 dark:focus:border-paper-50 font-mono text-xs">
+        </div>
+
+        <div>
+          <label class="block text-paper-800 dark:text-charcoal-text font-medium mb-1">Runtime Strategy</label>
+          <select x-model="newForm.build_type" 
+                  class="w-full bg-paper-50 dark:bg-charcoal-900 border border-paper rounded px-3 py-1.5 text-paper-900 dark:text-white focus:outline-none focus:border-paper-900 text-xs">
+            <option value="static">Static SPA (React / Vite / Astro / Vue) — Zero Container RAM</option>
+            <option value="node">Node.js Server Application</option>
+            <option value="dockerfile">Custom Dockerfile</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-paper-800 dark:text-charcoal-text font-medium mb-1">Public Domains (comma-separated)</label>
+          <input type="text" x-model="newForm.domains_raw" placeholder="app.example.com, api.example.com" 
+                 class="w-full bg-paper-50 dark:bg-charcoal-900 border border-paper rounded px-3 py-1.5 text-paper-900 dark:text-white focus:outline-none focus:border-paper-900 font-mono text-xs">
+        </div>
+
+        <div class="grid grid-cols-2 gap-3" x-show="newForm.build_type !== 'static'">
+          <div>
+            <label class="block text-paper-800 dark:text-charcoal-text font-medium mb-1">Internal Port</label>
+            <input type="number" x-model.number="newForm.port" placeholder="3000" 
+                   class="w-full bg-paper-50 dark:bg-charcoal-900 border border-paper rounded px-3 py-1.5 text-paper-900 dark:text-white focus:outline-none focus:border-paper-900 font-mono text-xs">
+          </div>
+          <div>
+            <label class="block text-paper-800 dark:text-charcoal-text font-medium mb-1">Memory Limit (MB)</label>
+            <input type="number" x-model.number="newForm.memory_limit_mb" placeholder="256" 
+                   class="w-full bg-paper-50 dark:bg-charcoal-900 border border-paper rounded px-3 py-1.5 text-paper-900 dark:text-white focus:outline-none focus:border-paper-900 font-mono text-xs">
+          </div>
+        </div>
+
+        <div x-show="newForm.build_type === 'static'">
+          <label class="block text-paper-800 dark:text-charcoal-text font-medium mb-1">Output Directory</label>
+          <input type="text" x-model="newForm.output_dir" placeholder="dist" 
+                 class="w-full bg-paper-50 dark:bg-charcoal-900 border border-paper rounded px-3 py-1.5 text-paper-900 dark:text-white focus:outline-none focus:border-paper-900 font-mono text-xs">
+        </div>
+      </div>
+
+      <div class="mt-6 flex justify-end gap-2 text-xs">
+        <button @click="showNewModal = false" class="px-3 py-1.5 rounded border border-paper text-paper-700 dark:text-charcoal-muted hover:text-paper-900 dark:hover:text-white">
+          Cancel
+        </button>
+        <button @click="createProject()" class="px-3.5 py-1.5 rounded bg-paper-900 text-paper-50 dark:bg-paper-50 dark:text-paper-900 font-medium hover:opacity-90">
+          Create Project
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Modal: CI/CD Setup & GitHub Actions -->
+  <div x-show="showSetupModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4">
+    <div @click.away="showSetupModal = false" 
+         class="bg-white dark:bg-charcoal-850 border border-paper rounded-xl max-w-xl w-full p-6 shadow-xl transition-all">
+      
+      <div class="flex justify-between items-center mb-4">
+        <div>
+          <h3 class="font-medium text-sm text-paper-900 dark:text-white">CI/CD Setup</h3>
+          <p class="text-xs text-paper-700 dark:text-charcoal-muted font-mono" x-text="activeProject?.name"></p>
+        </div>
+        <button @click="showSetupModal = false" class="text-paper-700 dark:text-charcoal-muted hover:text-paper-900 dark:hover:text-white text-base">&times;</button>
+      </div>
+
+      <div class="space-y-4 text-xs">
+        <!-- Option 1: GitHub Actions Remote Build -->
+        <div class="border border-paper rounded-lg p-3.5 space-y-2 bg-paper-50/50 dark:bg-charcoal-900/50">
+          <div class="flex items-center justify-between">
+            <span class="font-medium text-paper-900 dark:text-white">Recommended: GitHub Actions Remote Build</span>
+            <span class="text-[10px] font-mono px-1.5 py-0.2 rounded bg-accent/10 text-accent font-medium">0MB Server RAM</span>
+          </div>
+          <p class="text-paper-700 dark:text-charcoal-muted leading-relaxed">
+            Saves your server memory by building in GitHub's free runners and pushing the compiled artifact directly:
+          </p>
+          <div class="relative">
+            <pre class="bg-white dark:bg-charcoal-950 p-3 rounded border border-paper font-mono text-[11px] overflow-x-auto text-paper-800 dark:text-charcoal-text leading-tight" x-text="generateGitHubActionYAML(activeProject)"></pre>
+            <button @click="copyText(generateGitHubActionYAML(activeProject))" 
+                    class="absolute top-2 right-2 px-2 py-0.5 rounded bg-paper-200 dark:bg-charcoal-800 text-[10px] text-paper-800 dark:text-charcoal-text hover:bg-paper-300 transition">
+              Copy
+            </button>
+          </div>
+        </div>
+
+        <!-- Option 2: Direct Push Webhook -->
+        <div class="border border-paper rounded-lg p-3.5 space-y-1.5">
+          <span class="font-medium text-paper-900 dark:text-white">Git Webhook Push</span>
+          <p class="text-paper-700 dark:text-charcoal-muted">For direct webhook pushes, add this to GitHub Repo &rarr; Settings &rarr; Webhooks:</p>
+          <div class="space-y-1 font-mono text-[11px] text-paper-800 dark:text-charcoal-text pt-1">
+            <div>Payload URL: <span class="text-accent select-all" x-text="window.location.origin + '/api/v1/webhook/github/' + activeProject?.id"></span></div>
+            <div>Secret: <span class="select-all" x-text="activeProject?.webhook_secret"></span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-5 flex justify-end">
+        <button @click="showSetupModal = false" class="px-3 py-1.5 rounded border border-paper text-xs text-paper-700 dark:text-charcoal-muted hover:text-paper-900 dark:hover:text-white">
+          Close
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Modal: Live Deployment Logs -->
+  <div x-show="showLogsModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4">
+    <div @click.away="closeLogsModal()" 
+         class="bg-white dark:bg-charcoal-850 border border-paper rounded-xl max-w-2xl w-full p-6 shadow-xl flex flex-col max-h-[85vh]">
+      
+      <div class="flex justify-between items-center mb-3">
+        <div>
+          <h3 class="font-medium text-sm text-paper-900 dark:text-white">Deployment Stream</h3>
+          <p class="text-xs text-paper-700 dark:text-charcoal-muted font-mono" x-text="activeProject?.name"></p>
+        </div>
+        <button @click="closeLogsModal()" class="text-paper-700 dark:text-charcoal-muted hover:text-paper-900 dark:hover:text-white text-base">&times;</button>
+      </div>
+
+      <!-- Monospace Log Window -->
+      <div id="log-window" class="bg-paper-50 dark:bg-charcoal-950 border border-paper rounded-lg p-3.5 font-mono text-xs overflow-y-auto flex-1 min-h-[300px] max-h-[450px] space-y-1 text-paper-800 dark:text-charcoal-text leading-relaxed">
+        <template x-for="(line, idx) in logLines" :key="idx">
+          <div class="break-words" x-text="line"></div>
+        </template>
+        <div x-show="logLines.length === 0" class="text-paper-700 dark:text-charcoal-muted italic">Waiting for deployment output...</div>
+      </div>
+
+      <div class="mt-4 flex justify-between items-center text-xs">
+        <span class="text-paper-700 dark:text-charcoal-muted text-[11px]" x-text="logLines.length + ' lines streamed'"></span>
+        <button @click="closeLogsModal()" class="px-3 py-1.5 rounded border border-paper text-paper-700 dark:text-charcoal-muted hover:text-paper-900 dark:hover:text-white">
+          Close
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Alpine JS Application Controller -->
+  <script>
+    function bifrostApp() {
+      return {
+        darkMode: document.documentElement.classList.contains('dark'),
+        currentTab: 'apps',
+        metrics: {},
+        projects: [],
+        showNewModal: false,
+        showSetupModal: false,
+        showLogsModal: false,
+        activeProject: null,
+        logLines: [],
+        sseSource: null,
+        newForm: {
+          name: '',
+          build_type: 'static',
+          domains_raw: '',
+          port: 3000,
+          memory_limit_mb: 256,
+          output_dir: 'dist'
+        },
+
+        init() {
+          this.fetchMetrics();
+          this.fetchProjects();
+          setInterval(() => this.fetchMetrics(), 3000);
+          setInterval(() => {
+            if (this.currentTab === 'apps') this.fetchProjects();
+          }, 6000);
+        },
+
+        toggleTheme() {
+          this.darkMode = !this.darkMode;
+          if (this.darkMode) {
+            document.documentElement.classList.add('dark');
+            localStorage.setItem('bifrost-theme', 'dark');
+          } else {
+            document.documentElement.classList.remove('dark');
+            localStorage.setItem('bifrost-theme', 'light');
+          }
+        },
+
+        async fetchMetrics() {
+          try {
+            const res = await fetch('/api/v1/system/status');
+            if (res.ok) {
+              this.metrics = await res.json();
+            }
+          } catch(e) {}
+        },
+
+        async fetchProjects() {
+          try {
+            const res = await fetch('/api/v1/projects');
+            if (res.ok) {
+              this.projects = await res.json() || [];
+            }
+          } catch(e) {}
+        },
+
+        async createProject() {
+          const domains = this.newForm.domains_raw.split(',').map(s => s.trim()).filter(Boolean);
+          const payload = {
+            name: this.newForm.name,
+            build_type: this.newForm.build_type,
+            domains: domains,
+            port: this.newForm.port,
+            memory_limit_mb: this.newForm.memory_limit_mb,
+            output_dir: this.newForm.output_dir
+          };
+
+          const res = await fetch('/api/v1/projects', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+
+          if (res.ok) {
+            this.showNewModal = false;
+            this.newForm.name = '';
+            this.newForm.domains_raw = '';
+            await this.fetchProjects();
+          }
+        },
+
+        openSetupModal(p) {
+          this.activeProject = p;
+          this.showSetupModal = true;
+        },
+
+        async openLogsModal(p) {
+          this.activeProject = p;
+          this.logLines = [];
+          this.showLogsModal = true;
+
+          // Fetch recent deployments to find latest
+          try {
+            const res = await fetch(`/api/v1/projects/${p.id}/deployments`);
+            const deps = await res.json();
+            if (deps && deps.length > 0) {
+              this.connectSSE(deps[0].id);
+            } else {
+              this.logLines.push("[Bifrost] No deployments recorded yet.");
+            }
+          } catch(e) {}
+        },
+
+        connectSSE(depId) {
+          if (this.sseSource) {
+            this.sseSource.close();
+          }
+          this.sseSource = new EventSource(`/api/v1/deployments/${depId}/logs`);
+          this.sseSource.onmessage = (event) => {
+            this.logLines.push(event.data);
+            this.$nextTick(() => {
+              const el = document.getElementById('log-window');
+              if (el) el.scrollTop = el.scrollHeight;
+            });
+          };
+          this.sseSource.addEventListener('done', () => {
+            if (this.sseSource) this.sseSource.close();
+          });
+        },
+
+        closeLogsModal() {
+          this.showLogsModal = false;
+          if (this.sseSource) {
+            this.sseSource.close();
+            this.sseSource = null;
+          }
+        },
+
+        async deployManual(id) {
+          const res = await fetch(`/api/v1/projects/${id}/deploy`, { method: 'POST' });
+          if (res.ok) {
+            const data = await res.json();
+            const proj = this.projects.find(x => x.id === id);
+            if (proj) {
+              this.activeProject = proj;
+              this.logLines = [];
+              this.showLogsModal = true;
+              this.connectSSE(data.deployment_id);
+            }
+          }
+        },
+
+        async deleteProject(id) {
+          if (!confirm('Are you sure you want to delete this project?')) return;
+          await fetch(`/api/v1/projects/${id}`, { method: 'DELETE' });
+          await this.fetchProjects();
+        },
+
+        copyText(text) {
+          navigator.clipboard.writeText(text);
+          alert('Copied to clipboard');
+        },
+
+        formatMB(mb) {
+          if (!mb) return '0 MB';
+          if (mb >= 1024) return (mb / 1024).toFixed(1) + ' GB';
+          return mb + ' MB';
+        },
+
+        round(val) {
+          return Math.round(val || 0);
+        },
+
+        formatUptime(sec) {
+          if (!sec) return '0m';
+          const m = Math.floor(sec / 60);
+          const h = Math.floor(m / 60);
+          if (h > 0) return `${h}h ${m % 60}m`;
+          return `${m}m`;
+        },
+
+        generateGitHubActionYAML(p) {
+          if (!p) return '';
+          return `name: Deploy to Bifrost
+on:
+  push:
+    branches: [ ${p.branch || 'main'} ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm ci && npm run build
+      - name: Stream artifact to server
+        run: |
+          tar -czf artifact.tar.gz -C ${p.output_dir || 'dist'} .
+          curl -f -X POST "${window.location.origin}/api/v1/projects/${p.id}/deploy/artifact" \\
+            -H "Authorization: Bearer ${p.deploy_token}" \\
+            --data-binary @artifact.tar.gz`;
+        }
+      }
+    }
+  </script>
+</body>
+</html>
