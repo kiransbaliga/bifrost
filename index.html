@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="scroll-smooth">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Bifrost — The self-hosted PaaS that doesn't eat your entire server</title>
+  <title>Bifrost — Minimalist, Single-Binary PaaS for Resource-Conscious Clouds</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -26,7 +26,7 @@
             paper: {
               50: '#fafaf8',
               100: '#f6f6f3',
-              200: '#e7e7e1',
+              200: '#e8e8e2',
               300: '#deded8',
               700: '#797974',
               800: '#444441',
@@ -44,7 +44,7 @@
             accent: {
               DEFAULT: '#16a34a',
               hover: '#15803d',
-              light: 'rgba(22, 163, 74, 0.1)',
+              light: 'rgba(22, 163, 74, 0.08)',
             }
           }
         }
@@ -54,6 +54,11 @@
 
   <style>
     [x-cloak] { display: none !important; }
+
+    html {
+      scroll-behavior: smooth;
+      scroll-padding-top: 5rem;
+    }
 
     body {
       transition: background-color 0.2s ease, color 0.2s ease;
@@ -66,7 +71,7 @@
       border-color: #262623;
     }
 
-    /* Hand-drawn sketch animations */
+    /* Hand-drawn sketch stroke animations */
     @keyframes drawLoop {
       0% {
         stroke-dashoffset: 700;
@@ -124,23 +129,23 @@
 <body class="bg-paper-100 text-paper-900 dark:bg-charcoal-900 dark:text-charcoal-text font-sans antialiased text-[14px] min-h-screen selection:bg-accent selection:text-white"
       x-data="landingApp()">
 
-  <!-- Nav -->
-  <header class="border-b border-paper bg-paper-100/90 dark:bg-charcoal-900/90 backdrop-blur sticky top-0 z-40">
-    <div class="max-w-3xl mx-auto px-5 h-14 flex items-center justify-between">
+  <!-- Header Navigation -->
+  <header class="border-b border-paper bg-paper-100/90 dark:bg-charcoal-900/90 backdrop-blur sticky top-0 z-40 transition-colors">
+    <div class="max-w-4xl mx-auto px-5 h-14 flex items-center justify-between">
       <div class="flex items-center gap-2.5">
         <span class="w-2.5 h-2.5 rounded-full bg-accent animate-pulse"></span>
         <a href="#" class="font-semibold text-sm tracking-tight text-paper-900 dark:text-white">bifrost</a>
         <span class="text-xs font-mono text-paper-700 dark:text-charcoal-muted ml-2 border-l border-paper pl-2">v0.1.0</span>
       </div>
 
-      <nav class="flex items-center gap-4 text-xs">
+      <nav class="flex items-center gap-5 text-xs">
         <a href="#why" class="text-paper-700 dark:text-charcoal-muted hover:text-paper-900 dark:hover:text-white transition">Why</a>
-        <a href="#comparison" class="text-paper-700 dark:text-charcoal-muted hover:text-paper-900 dark:hover:text-white transition">The Math</a>
-        <a href="#how" class="text-paper-700 dark:text-charcoal-muted hover:text-paper-900 dark:hover:text-white transition">How it Works</a>
+        <a href="#comparison" class="text-paper-700 dark:text-charcoal-muted hover:text-paper-900 dark:hover:text-white transition">Benchmarks</a>
+        <a href="#architecture" class="text-paper-700 dark:text-charcoal-muted hover:text-paper-900 dark:hover:text-white transition">Architecture</a>
         <a href="https://github.com/kiransbaliga/bifrost" target="_blank" class="text-paper-700 dark:text-charcoal-muted hover:text-paper-900 dark:hover:text-white transition font-mono">
           GitHub &nearr;
         </a>
-        <button @click="toggleTheme()" class="p-1 rounded text-paper-700 dark:text-charcoal-muted hover:text-paper-900 dark:hover:text-white">
+        <button @click="toggleTheme()" class="p-1 rounded text-paper-700 dark:text-charcoal-muted hover:text-paper-900 dark:hover:text-white" title="Toggle theme">
           <span x-show="!darkMode">◑</span>
           <span x-show="darkMode">◐</span>
         </button>
@@ -148,14 +153,14 @@
     </div>
   </header>
 
-  <!-- Hero Section -->
-  <main class="max-w-3xl mx-auto px-5 pt-12 pb-24 space-y-20">
+  <!-- Main Content Container -->
+  <main class="max-w-4xl mx-auto px-5 pt-12 pb-24 space-y-24">
 
+    <!-- Hero Section -->
     <section class="space-y-6 pt-4">
-      <div class="inline-flex items-center gap-2 px-2.5 py-1 rounded-full border border-paper bg-white/60 dark:bg-charcoal-850 text-xs text-paper-700 dark:text-charcoal-muted font-mono">
-        <span class="w-1.5 h-1.5 rounded-full bg-accent"></span>
-        <span>Single binary. Zero external daemons.</span>
-      </div>
+      <p class="font-mono text-[11px] text-paper-700 dark:text-charcoal-muted uppercase tracking-widest">
+        Self-Hosted PaaS &middot; Edge Reverse Proxy &middot; Zero Daemons
+      </p>
 
       <h1 class="text-3xl sm:text-4xl font-medium tracking-tight text-paper-900 dark:text-white leading-[1.35]">
         Deploy apps on a 1GB server without triggering the 
@@ -174,54 +179,57 @@
         </span>
       </h1>
 
-      <p class="text-paper-800 dark:text-charcoal-muted text-base leading-relaxed max-w-2xl">
-        I like Coolify, but running PostgreSQL, Redis, Horizon, Traefik, and PHP-FPM just to host two small personal projects on a free Oracle instance is ridiculous. Bifrost puts the orchestrator, SQLite, TLS, and reverse proxy in a single 11MB binary that idles at 14MB of RAM.
+      <p class="text-paper-800 dark:text-charcoal-text text-base leading-relaxed max-w-2xl">
+        The Linux Out-Of-Memory (OOM) killer is the kernel's emergency mechanism. When physical RAM and swap are exhausted, the kernel violently terminates the largest process on your machine, usually your database, to keep the operating system alive.
       </p>
 
-      <!-- Handwritten note with arrow -->
-      <div class="relative py-2 select-none flex items-center gap-3">
-        <span class="font-hand text-xl text-paper-800 dark:text-charcoal-text rotate-[-2deg]">
-          Leaves 900MB+ of RAM for your actual code &rarr;
+      <p class="text-paper-800 dark:text-charcoal-muted text-sm leading-relaxed max-w-2xl">
+        Traditional PaaS stacks eat 600MB+ before you deploy a single service. Bifrost packs the orchestrator, SQLite, TLS, and reverse proxy into a single 11MB binary that idles at 14MB of resident memory, leaving 900MB+ for your actual code.
+      </p>
+
+      <!-- Handwritten Annotation -->
+      <div class="relative py-1 select-none flex items-center gap-3">
+        <span class="font-hand text-xl text-paper-900 dark:text-charcoal-text rotate-[-2deg]">
+          Leaves 900MB+ of RAM for user workloads &rarr;
         </span>
-        <span class="text-xs font-mono text-paper-700 dark:text-charcoal-muted">(revolutionary idea, I know)</span>
+        <span class="text-xs font-mono text-paper-700 dark:text-charcoal-muted">(not eaten by control plane daemons)</span>
       </div>
 
-      <!-- Quick install snippet -->
+      <!-- Clean 1-Line Installer -->
       <div class="pt-2">
-        <div class="bg-white dark:bg-charcoal-850 border border-paper rounded-lg p-3.5 flex items-center justify-between font-mono text-xs">
+        <div class="bg-white dark:bg-charcoal-850 border border-paper rounded-lg p-3.5 flex items-center justify-between font-mono text-xs shadow-xs">
           <div class="flex items-center gap-3 text-paper-800 dark:text-charcoal-text overflow-x-auto">
             <span class="text-accent select-none">$</span>
-            <code>curl -sSL https://raw.githubusercontent.com/kiransbaliga/bifrost/main/scripts/install.sh | sudo bash</code>
+            <code>curl -sSL https://baliga.dev/bifrost/install.sh | sudo bash</code>
           </div>
-          <button @click="copyCommand()" class="text-paper-700 hover:text-paper-900 dark:text-charcoal-muted dark:hover:text-white px-2 py-1 rounded border border-paper text-[11px] shrink-0 ml-3">
-            <span x-text="copied ? 'Copied!' : 'Copy'"></span>
+          <button @click="copyCommand()" class="text-paper-700 hover:text-paper-900 dark:text-charcoal-muted dark:hover:text-white px-2.5 py-1 rounded border border-paper text-[11px] shrink-0 ml-3 transition">
+            <span x-text="copied ? 'Copied' : 'Copy'"></span>
           </button>
         </div>
       </div>
     </section>
 
-    <!-- The Problem (Story style) -->
+    <!-- Narrative Section: Why this exists -->
     <section id="why" class="border-t border-paper pt-12 space-y-4">
-      <h2 class="text-xl font-medium tracking-tight text-paper-900 dark:text-white flex items-center gap-2">
-        <span>The 1GB server tragedy</span>
+      <h2 class="text-xl font-medium tracking-tight text-paper-900 dark:text-white">
+        The 1GB server dilemma
       </h2>
 
-      <div class="space-y-3.5 text-paper-800 dark:text-charcoal-text leading-relaxed">
+      <div class="space-y-3.5 text-paper-800 dark:text-charcoal-text leading-relaxed text-[14px]">
         <p>
-          You get a free cloud VPS. You feel like a cloud architect. You decide to set up a self-hosted PaaS so you can push code like Vercel without paying \$20 a month.
+          You claim a free tier cloud instance. You set up a self-hosted platform so you can push code like Vercel or Railway without paying monthly subscription tiers.
         </p>
         <p>
-          You install the popular options. Five minutes in, your server stops responding. SSH hangs. You check the dashboard: the Linux OOM killer woke up in an absolute rage and murdered everything because the control plane alone ate 650MB of RAM.
+          You run the standard install. Minutes later, the server stops responding. SSH hangs. The control plane booted a PostgreSQL database, a Redis cache, a queue manager, an external Traefik proxy, and a PHP-FPM API server. Total idle memory consumed: 650MB.
         </p>
         <p>
-          Then you run <code>npm build</code>, and the remaining 350MB of RAM vanishes into Vite's multithreaded machinery. The machine reboots itself in shame.
+          Then your first deployment triggers <code>npm run build</code>. Vite or webpack allocates 500MB during bundling. The kernel runs out of memory, triggers the OOM killer, and panics your machine.
         </p>
       </div>
 
-      <!-- Sketch underline on punchline -->
       <div class="relative pt-2">
         <span class="font-hand text-2xl text-paper-900 dark:text-white rotate-[1deg] inline-block">
-          Bifrost was built out of sheer irritation.
+          Bifrost was built to end this exact failure mode.
         </span>
         <svg class="w-72 h-3 overflow-visible mt-1" viewBox="0 0 280 12" fill="none">
           <path class="animate-draw-scribble" d="M3 8 C60 2, 180 3, 275 7 C210 12, 90 9, 20 10" stroke="#16a34a" stroke-width="2" stroke-linecap="round"/>
@@ -229,96 +237,248 @@
       </div>
     </section>
 
-    <!-- The Real Memory Math -->
+    <!-- Professional Benchmarks & Architecture Comparison -->
     <section id="comparison" class="border-t border-paper pt-12 space-y-6">
       <div class="flex items-baseline justify-between">
         <div>
-          <h2 class="text-xl font-medium tracking-tight text-paper-900 dark:text-white">Idle Memory Footprint</h2>
-          <p class="text-xs text-paper-700 dark:text-charcoal-muted mt-1">Measured resident memory before launching any user containers.</p>
+          <h2 class="text-xl font-medium tracking-tight text-paper-900 dark:text-white">Control Plane Resource Comparison</h2>
+          <p class="text-xs text-paper-700 dark:text-charcoal-muted mt-1">
+            Measured baseline idle memory before running any user applications.
+          </p>
         </div>
-        <span class="font-mono text-xs text-accent">Lower is better</span>
+        <span class="font-mono text-xs text-paper-700 dark:text-charcoal-muted">Target: 1GB VPS</span>
       </div>
 
-      <div class="space-y-3">
-        <!-- Coolify -->
-        <div class="bg-white dark:bg-charcoal-850 border border-paper rounded-lg p-4 space-y-2">
-          <div class="flex justify-between items-center text-xs">
-            <span class="font-medium text-paper-900 dark:text-white">Traditional Stack (Coolify / CapRover)</span>
-            <span class="font-mono text-red-500 font-semibold">~620 MB</span>
-          </div>
-          <div class="w-full bg-paper-200 dark:bg-charcoal-border h-2 rounded-full overflow-hidden">
-            <div class="bg-red-400 dark:bg-red-500 h-full rounded-full" style="width: 62%;"></div>
-          </div>
-          <p class="text-[11px] text-paper-700 dark:text-charcoal-muted">Postgres (100MB) + Redis (60MB) + Traefik (60MB) + Laravel/PHP (250MB) + Docker (150MB)</p>
+      <!-- High-Density Monochromatic Comparison Table -->
+      <div class="overflow-x-auto border border-paper rounded-lg bg-white dark:bg-charcoal-850">
+        <table class="w-full text-left border-collapse text-xs">
+          <thead>
+            <tr class="border-b border-paper bg-paper-50 dark:bg-charcoal-900 text-paper-700 dark:text-charcoal-muted font-mono text-[11px]">
+              <th class="py-3 px-4 font-medium">Orchestrator</th>
+              <th class="py-3 px-4 font-medium">Required Background Services</th>
+              <th class="py-3 px-4 font-medium">Idle Memory</th>
+              <th class="py-3 px-4 font-medium">Usable RAM (1GB Host)</th>
+              <th class="py-3 px-4 font-medium">Build Safety</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-paper text-paper-800 dark:text-charcoal-text font-mono text-[12px]">
+            <tr class="hover:bg-paper-50/50 dark:hover:bg-charcoal-800/40 transition">
+              <td class="py-3 px-4 font-sans font-medium text-paper-900 dark:text-white">Coolify v4</td>
+              <td class="py-3 px-4 text-paper-700 dark:text-charcoal-muted text-[11.5px] font-sans">PostgreSQL, Redis, Horizon, Traefik, Docker daemon, PHP API</td>
+              <td class="py-3 px-4 font-semibold text-paper-900 dark:text-white">~620 MB</td>
+              <td class="py-3 px-4 text-paper-700 dark:text-charcoal-muted">~380 MB</td>
+              <td class="py-3 px-4 text-[11px] font-sans text-paper-700 dark:text-charcoal-muted">OOM risk during local bundling</td>
+            </tr>
+            <tr class="hover:bg-paper-50/50 dark:hover:bg-charcoal-800/40 transition">
+              <td class="py-3 px-4 font-sans font-medium text-paper-900 dark:text-white">Dokku</td>
+              <td class="py-3 px-4 text-paper-700 dark:text-charcoal-muted text-[11.5px] font-sans">Docker daemon, Nginx proxy, plugin runtimes</td>
+              <td class="py-3 px-4 font-semibold text-paper-900 dark:text-white">~280 MB</td>
+              <td class="py-3 px-4 text-paper-700 dark:text-charcoal-muted">~720 MB</td>
+              <td class="py-3 px-4 text-[11px] font-sans text-paper-700 dark:text-charcoal-muted">Moderate (host swap required)</td>
+            </tr>
+            <tr class="hover:bg-paper-50/50 dark:hover:bg-charcoal-800/40 transition">
+              <td class="py-3 px-4 font-sans font-medium text-paper-900 dark:text-white">CapRover</td>
+              <td class="py-3 px-4 text-paper-700 dark:text-charcoal-muted text-[11.5px] font-sans">Docker daemon, Nginx container, Node.js API</td>
+              <td class="py-3 px-4 font-semibold text-paper-900 dark:text-white">~160 MB</td>
+              <td class="py-3 px-4 text-paper-700 dark:text-charcoal-muted">~840 MB</td>
+              <td class="py-3 px-4 text-[11px] font-sans text-paper-700 dark:text-charcoal-muted">Moderate</td>
+            </tr>
+            <tr class="bg-accent/5 dark:bg-accent/10 hover:bg-accent/10 transition font-medium">
+              <td class="py-3 px-4 font-sans font-semibold text-accent flex items-center gap-1.5">
+                <span>Bifrost</span>
+                <span class="text-[9px] px-1.5 py-0.2 rounded border border-accent/30 text-accent uppercase font-mono">Lean</span>
+              </td>
+              <td class="py-3 px-4 text-paper-800 dark:text-charcoal-text text-[11.5px] font-sans">Zero external daemons (embedded SQLite + in-process proxy)</td>
+              <td class="py-3 px-4 font-bold text-accent">14 MB</td>
+              <td class="py-3 px-4 font-bold text-paper-900 dark:text-white">986 MB</td>
+              <td class="py-3 px-4 text-[11px] font-sans text-accent">Zero server build RAM (remote streaming)</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Architectural Ratio Comparison Bar -->
+      <div class="space-y-2 pt-2">
+        <div class="flex justify-between text-xs text-paper-700 dark:text-charcoal-muted">
+          <span>Memory Footprint Scale</span>
+          <span class="font-mono">Bifrost uses 2.2% the RAM of traditional multi-container stacks</span>
         </div>
-
-        <!-- Dokku -->
-        <div class="bg-white dark:bg-charcoal-850 border border-paper rounded-lg p-4 space-y-2">
-          <div class="flex justify-between items-center text-xs">
-            <span class="font-medium text-paper-900 dark:text-white">Dokku</span>
-            <span class="font-mono text-amber-500 font-semibold">~280 MB</span>
-          </div>
-          <div class="w-full bg-paper-200 dark:bg-charcoal-border h-2 rounded-full overflow-hidden">
-            <div class="bg-amber-400 dark:bg-amber-500 h-full rounded-full" style="width: 28%;"></div>
-          </div>
-          <p class="text-[11px] text-paper-700 dark:text-charcoal-muted">Bash glue scripts + Docker daemon + Nginx + plugin runtimes</p>
+        <div class="w-full bg-paper-200 dark:bg-charcoal-border h-3 rounded overflow-hidden flex">
+          <div class="bg-accent h-full" style="width: 2.2%;" title="Bifrost: 14MB"></div>
+          <div class="bg-paper-300 dark:bg-charcoal-800 h-full flex-1" title="Remaining capacity for apps"></div>
         </div>
-
-        <!-- Bifrost -->
-        <div class="bg-white dark:bg-charcoal-850 border-2 border-accent/40 rounded-lg p-4 space-y-2 relative">
-          <div class="flex justify-between items-center text-xs">
-            <div class="flex items-center gap-2">
-              <span class="font-medium text-paper-900 dark:text-white">Bifrost</span>
-              <span class="text-[10px] px-1.5 py-0.2 rounded bg-accent/15 text-accent font-mono font-medium">Single Go Binary</span>
-            </div>
-            <span class="font-mono text-accent font-bold">~14 MB</span>
-          </div>
-          <div class="w-full bg-paper-200 dark:bg-charcoal-border h-2 rounded-full overflow-hidden">
-            <div class="bg-accent h-full rounded-full" style="width: 2%;"></div>
-          </div>
-          <p class="text-[11px] text-paper-700 dark:text-charcoal-muted">In-process proxy + embedded SQLite (2MB cache cap) + direct Unix socket driver</p>
-
-          <span class="absolute -right-3 -top-3 font-hand text-lg text-accent bg-paper-100 dark:bg-charcoal-900 px-2 py-0.5 rounded border border-accent/30 rotate-6 select-none">
-            ~98% less memory!
-          </span>
+        <div class="flex justify-between text-[11px] font-mono text-paper-700 dark:text-charcoal-muted">
+          <span>&uarr; Bifrost Control Plane (14MB)</span>
+          <span>Available for user software (986MB) &rarr;</span>
         </div>
       </div>
     </section>
 
-    <!-- Architecture & Hacks -->
-    <section id="how" class="border-t border-paper pt-12 space-y-6">
-      <h2 class="text-xl font-medium tracking-tight text-paper-900 dark:text-white">The Engineering Behind It</h2>
+    <!-- Deep Technical Architecture Explorer (Replaces generic cards) -->
+    <section id="architecture" class="border-t border-paper pt-12 space-y-6" x-data="{ activePillar: 'proxy' }">
+      <div class="flex items-baseline justify-between">
+        <div>
+          <h2 class="text-xl font-medium tracking-tight text-paper-900 dark:text-white">Architecture & Internal Primitives</h2>
+          <p class="text-xs text-paper-700 dark:text-charcoal-muted mt-1">
+            How Bifrost achieves sub-15MB idle footprints without sacrificing capability.
+          </p>
+        </div>
+      </div>
 
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-        
-        <div class="bg-white dark:bg-charcoal-850 border border-paper rounded-lg p-4 space-y-2">
-          <h3 class="font-medium text-paper-900 dark:text-white text-sm">1. Remote Build Hack</h3>
-          <p class="text-paper-700 dark:text-charcoal-muted leading-relaxed">
-            GitHub gives you free 7GB runners. Why run webpack on your tiny cloud server? GitHub Actions builds your app remotely and pushes the artifact tarball to Bifrost. Server memory during build: 5MB.
+      <!-- Tab Buttons -->
+      <div class="flex flex-wrap gap-2 border-b border-paper pb-3">
+        <button @click="activePillar = 'proxy'"
+                :class="activePillar === 'proxy' ? 'bg-paper-900 text-white dark:bg-paper-50 dark:text-paper-900' : 'bg-white dark:bg-charcoal-850 text-paper-700 dark:text-charcoal-muted border border-paper'"
+                class="px-3 py-1.5 rounded text-xs font-medium transition">
+          1. In-Process Proxy & TLS
+        </button>
+        <button @click="activePillar = 'build'"
+                :class="activePillar === 'build' ? 'bg-paper-900 text-white dark:bg-paper-50 dark:text-paper-900' : 'bg-white dark:bg-charcoal-850 text-paper-700 dark:text-charcoal-muted border border-paper'"
+                class="px-3 py-1.5 rounded text-xs font-medium transition">
+          2. Remote Artifact Pipeline
+        </button>
+        <button @click="activePillar = 'socket'"
+                :class="activePillar === 'socket' ? 'bg-paper-900 text-white dark:bg-paper-50 dark:text-paper-900' : 'bg-white dark:bg-charcoal-850 text-paper-700 dark:text-charcoal-muted border border-paper'"
+                class="px-3 py-1.5 rounded text-xs font-medium transition">
+          3. Unix Socket Driver
+        </button>
+        <button @click="activePillar = 'sqlite'"
+                :class="activePillar === 'sqlite' ? 'bg-paper-900 text-white dark:bg-paper-50 dark:text-paper-900' : 'bg-white dark:bg-charcoal-850 text-paper-700 dark:text-charcoal-muted border border-paper'"
+                class="px-3 py-1.5 rounded text-xs font-medium transition">
+          4. SQLite Memory Caps
+        </button>
+      </div>
+
+      <!-- Deep Dive Content Panes -->
+      <div class="bg-white dark:bg-charcoal-850 border border-paper rounded-lg p-6 space-y-4">
+
+        <!-- Pillar 1: In-Process Reverse Proxy -->
+        <div x-show="activePillar === 'proxy'" x-cloak class="space-y-4">
+          <div class="flex items-start justify-between">
+            <div>
+              <h3 class="font-medium text-base text-paper-900 dark:text-white">Zero-Daemon Reverse Proxying</h3>
+              <p class="text-xs text-paper-700 dark:text-charcoal-muted mt-0.5">Eliminates Traefik and Caddy containers (saves 60MB RAM).</p>
+            </div>
+            <span class="font-mono text-xs text-accent">internal/proxy</span>
+          </div>
+
+          <p class="text-paper-800 dark:text-charcoal-text text-xs leading-relaxed">
+            Running external reverse proxies like Traefik or Caddy requires a dedicated container, inter-process network bridging, and periodic docker label discovery. Bifrost embeds Go's battle-tested <code>net/http/httputil.ReverseProxy</code> directly in the main process.
+          </p>
+
+          <div class="bg-paper-50 dark:bg-charcoal-950 p-3.5 rounded border border-paper font-mono text-xs text-paper-800 dark:text-charcoal-text overflow-x-auto space-y-1">
+            <span class="text-paper-700 dark:text-charcoal-muted">// Zero-allocation 32KB buffer pooling stops garbage collector spikes</span><br>
+            <span class="text-accent">type</span> bufferPool <span class="text-accent">struct</span> { pool sync.Pool }<br>
+            <span class="text-accent">func</span> (bp *bufferPool) Get() []<span class="text-accent">byte</span> { <span class="text-accent">return</span> *(bp.pool.Get().(*[]<span class="text-accent">byte</span>)) }<br>
+            <span class="text-accent">func</span> (bp *bufferPool) Put(b []<span class="text-accent">byte</span>) { bp.pool.Put(&b) }
+          </div>
+
+          <ul class="text-xs text-paper-700 dark:text-charcoal-muted space-y-1.5 list-disc pl-4">
+            <li><strong>Lock-Free Routing:</strong> Route lookups are stored in an <code>atomic.Pointer</code> for zero-contention read throughput.</li>
+            <li><strong>Automated TLS:</strong> Automatic Let's Encrypt certificates via <code>golang.org/x/crypto/acme/autocert</code> on ports 80 and 443.</li>
+            <li><strong>Static Direct Serve:</strong> Static SPA apps bypass containers entirely; files are served directly with gzip streaming and SPA index.html fallbacks.</li>
+          </ul>
+        </div>
+
+        <!-- Pillar 2: Remote Artifact Pipeline -->
+        <div x-show="activePillar === 'build'" x-cloak class="space-y-4">
+          <div class="flex items-start justify-between">
+            <div>
+              <h3 class="font-medium text-base text-paper-900 dark:text-white">Remote Artifact Deployment (0MB Server Build RAM)</h3>
+              <p class="text-xs text-paper-700 dark:text-charcoal-muted mt-0.5">Offload heavy bundling to GitHub's free 7GB runners.</p>
+            </div>
+            <span class="font-mono text-xs text-accent">internal/builder</span>
+          </div>
+
+          <p class="text-paper-800 dark:text-charcoal-text text-xs leading-relaxed">
+            Running <code>npm run build</code> or Docker buildx on a 1GB host inevitably spikes memory by 600MB–1.2GB. Bifrost introduces the remote artifact pattern:
+          </p>
+
+          <div class="bg-paper-50 dark:bg-charcoal-950 p-3.5 rounded border border-paper font-mono text-xs text-paper-800 dark:text-charcoal-text overflow-x-auto">
+            1. Developer pushes to GitHub (main branch)<br>
+            2. GitHub Actions runs build on 7GB runner (npm ci && npm run build)<br>
+            3. Runner streams tarball to Bifrost: POST /api/v1/projects/:id/deploy/artifact<br>
+            4. Bifrost extracts to disk (5MB RAM) and hot-swaps routing pointer in &lt;1 second
+          </div>
+
+          <p class="text-xs text-paper-700 dark:text-charcoal-muted">
+            For users who prefer direct Git webhooks without GitHub Actions, Bifrost provides a guarded local fallback: a global single-concurrency lock with <code>NODE_OPTIONS="--max-old-space-size=384"</code> to keep V8 inside host bounds.
           </p>
         </div>
 
-        <div class="bg-white dark:bg-charcoal-850 border border-paper rounded-lg p-4 space-y-2">
-          <h3 class="font-medium text-paper-900 dark:text-white text-sm">2. Zero-Container Static Bypass</h3>
-          <p class="text-paper-700 dark:text-charcoal-muted leading-relaxed">
-            If you build a React or Vite site, why boot a Node container or Nginx instance? Bifrost serves the static assets directly with gzip streaming and SPA index.html routing. 0MB container overhead.
+        <!-- Pillar 3: Unix Socket Driver -->
+        <div x-show="activePillar === 'socket'" x-cloak class="space-y-4">
+          <div class="flex items-start justify-between">
+            <div>
+              <h3 class="font-medium text-base text-paper-900 dark:text-white">Lean Unix Domain Socket Client</h3>
+              <p class="text-xs text-paper-700 dark:text-charcoal-muted mt-0.5">Zero SDK dependencies; native Kiri and Docker engine compatibility.</p>
+            </div>
+            <span class="font-mono text-xs text-accent">internal/runtime</span>
+          </div>
+
+          <p class="text-paper-800 dark:text-charcoal-text text-xs leading-relaxed">
+            The official Docker Go SDK pulls in dozens of packages (gRPC, OpenTelemetry, containerd), adding 15MB to the binary and substantial heap allocations. Bifrost uses a specialized 300-line HTTP client over Unix sockets (<code>/var/run/kiri.sock</code> or <code>/var/run/docker.sock</code>).
+          </p>
+
+          <div class="bg-paper-50 dark:bg-charcoal-950 p-3.5 rounded border border-paper font-mono text-xs text-paper-800 dark:text-charcoal-text overflow-x-auto space-y-1">
+            transport := &http.Transport{<br>
+            &nbsp;&nbsp;DialContext: func(ctx context.Context, _, _ string) (net.Conn, error) {<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;return (&net.Dialer{}).DialContext(ctx, "unix", socketPath)<br>
+            &nbsp;&nbsp;},<br>
+            }
+          </div>
+
+          <p class="text-xs text-paper-700 dark:text-charcoal-muted">
+            Auto-detects <strong>Kiri</strong> (a 15MB Rust container daemon) or standard Docker, and automatically injects hard cgroup memory ceilings (<code>MemoryLimitMB</code>) on every container spawned.
           </p>
         </div>
 
-        <div class="bg-white dark:bg-charcoal-850 border border-paper rounded-lg p-4 space-y-2">
-          <h3 class="font-medium text-paper-900 dark:text-white text-sm">3. In-Process TLS & Proxy</h3>
-          <p class="text-paper-700 dark:text-charcoal-muted leading-relaxed">
-            Eliminates Traefik and Caddy. Uses Go's standard reverse proxy paired with <code>sync.Pool</code> 32KB buffer recycling and Let's Encrypt autocert. Lock-free atomic routing lookups.
+        <!-- Pillar 4: SQLite Memory Caps -->
+        <div x-show="activePillar === 'sqlite'" x-cloak class="space-y-4">
+          <div class="flex items-start justify-between">
+            <div>
+              <h3 class="font-medium text-base text-paper-900 dark:text-white">Embedded Database with Bounded Page Cache</h3>
+              <p class="text-xs text-paper-700 dark:text-charcoal-muted mt-0.5">Pure Go SQLite with low-memory connection pragmas.</p>
+            </div>
+            <span class="font-mono text-xs text-accent">internal/store</span>
+          </div>
+
+          <p class="text-paper-800 dark:text-charcoal-text text-xs leading-relaxed">
+            PostgreSQL consumes 80MB–120MB even with zero active queries. Bifrost uses embedded pure Go SQLite (<code>modernc.org/sqlite</code>) with CGO disabled, configured with aggressive memory pragmas:
+          </p>
+
+          <div class="bg-paper-50 dark:bg-charcoal-950 p-3.5 rounded border border-paper font-mono text-xs text-paper-800 dark:text-charcoal-text overflow-x-auto space-y-1">
+            PRAGMA journal_mode = WAL;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-- Concurrent non-blocking reads<br>
+            PRAGMA cache_size = -2000;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-- Caps page cache at strictly 2MB<br>
+            PRAGMA temp_store = FILE;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-- Sort tables buffer to disk, not RAM<br>
+            PRAGMA mmap_size = 0;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-- Disables virtual memory bloat
+          </div>
+
+          <p class="text-xs text-paper-700 dark:text-charcoal-muted">
+            The entire state database is stored in a single file (<code>/var/lib/bifrost/bifrost.db</code>), making backups as straightforward as copying one file.
           </p>
         </div>
 
-        <div class="bg-white dark:bg-charcoal-850 border border-paper rounded-lg p-4 space-y-2">
-          <h3 class="font-medium text-paper-900 dark:text-white text-sm">4. Kiri Engine Support</h3>
-          <p class="text-paper-700 dark:text-charcoal-muted leading-relaxed">
-            Works with standard Docker, but supports Kiri (the lightweight Rust container engine). Instead of containerd's 150MB overhead, Kiri idles at 15MB.
-          </p>
+      </div>
+    </section>
+
+    <!-- Installation & Quickstart -->
+    <section id="install" class="border-t border-paper pt-12 space-y-6">
+      <h2 class="text-xl font-medium tracking-tight text-paper-900 dark:text-white">Getting Started</h2>
+
+      <div class="space-y-4 text-xs text-paper-800 dark:text-charcoal-text leading-relaxed">
+        <p>
+          Bifrost runs on any Ubuntu or Debian Linux server (x86_64 or ARM64). The installer automatically configures a 2GB swapfile if low RAM is detected:
+        </p>
+
+        <div class="bg-white dark:bg-charcoal-850 border border-paper rounded-lg p-4 font-mono space-y-2">
+          <div class="text-paper-700 dark:text-charcoal-muted">// Install and launch systemd service</div>
+          <div class="text-paper-900 dark:text-white select-all">curl -sSL https://baliga.dev/bifrost/install.sh | sudo bash</div>
         </div>
 
+        <p class="text-paper-700 dark:text-charcoal-muted">
+          Once installed, open <code>http://YOUR_SERVER_IP:80</code> to manage applications and view real-time host telemetry.
+        </p>
       </div>
     </section>
 
@@ -334,7 +494,7 @@
 
       <div class="flex items-center gap-4">
         <a href="https://github.com/kiransbaliga/bifrost" class="hover:text-paper-900 dark:hover:text-white font-mono">
-          GitHub Repository &rarr;
+          github.com/kiransbaliga/bifrost &nearr;
         </a>
       </div>
     </footer>
@@ -357,7 +517,7 @@
           }
         },
         copyCommand() {
-          navigator.clipboard.writeText('curl -sSL https://raw.githubusercontent.com/kiransbaliga/bifrost/main/scripts/install.sh | sudo bash');
+          navigator.clipboard.writeText('curl -sSL https://baliga.dev/bifrost/install.sh | sudo bash');
           this.copied = true;
           setTimeout(() => this.copied = false, 2000);
         }
